@@ -48,16 +48,21 @@
     <Compile Include="GameStates\MainMenu.cs" />
     <Compile Include="GameStates\Playing.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Simulation\CryptCoinAccount.cs" />
+    <Compile Include="Simulation\CryptFeatures\DeviceContainer.cs" />
     <Compile Include="Simulation\CryptFeatures\OpenSpace.cs" />
+    <Compile Include="Simulation\CryptFeatures\Undefined.cs" />
     <Compile Include="Simulation\CryptFeatures\Wall.cs" />
-    <Compile Include="Simulation\CryptFeatures\WallWithHellFirePortal.cs" />
-    <Compile Include="Simulation\CryptFeatures\WallWithSoulPortal.cs" />
+    <Compile Include="Simulation\CryptFeatures\HellFirePortal.cs" />
+    <Compile Include="Simulation\CryptFeatures\DecensionPortal.cs" />
     <Compile Include="Simulation\Context.cs" />
     <Compile Include="Simulation\Crypt.cs" />
     <Compile Include="Simulation\Device.cs" />
-    <Compile Include="Simulation\Devices\Computer.cs" />
-    <Compile Include="Simulation\Devices\PowerUnit.cs" />
-    <Compile Include="Simulation\Devices\Router.cs" />
+    <Compile Include="Simulation\Devices\CryptCoinEngine.cs" />
+    <Compile Include="Simulation\Devices\Receivers.cs" />
+    <Compile Include="Simulation\Devices\Pipes.cs" />
+    <Compile Include="Simulation\IO.cs" />
+    <Compile Include="Simulation\Units.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="MonoGame.Framework">

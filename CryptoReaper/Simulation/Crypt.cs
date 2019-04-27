@@ -1,4 +1,4 @@
-﻿using CryptoReaper.Simulation.CryptFeature;
+﻿using CryptoReaper.Simulation.CryptFeatures;
 using System;
 using System.Collections.Generic;
 
@@ -34,14 +34,20 @@ namespace CryptoReaper.Simulation
 
             public Feature GetFeature(Dictionary<string, Feature> features)
             {
-                if (!this.HasFeature(features)) throw new Exception("building does not have feature");
+                if (!this.HasFeature(features)) return new Undefined();
                 return features[_key];
+            }
+
+            public void SetFeature(Dictionary<string, Feature> cryptFeatures, Feature value)
+            {
+                cryptFeatures[_key] = value;
             }
         }
 
         public Feature this[Coords coords]
         {
-            get =>
+            get => coords.GetFeature(_cryptFeatures);
+            set => coords.SetFeature(_cryptFeatures, value);
         }
 
         public PlaceDeviceResult PlaceDevice(Coords coords, Device device)
@@ -51,22 +57,24 @@ namespace CryptoReaper.Simulation
 
             var buildingFeature = coords.GetFeature(_cryptFeatures);
 
-            if (buildingFeature is OpenSpace os)
+            if (buildingFeature is DeviceContainer dc)
             {
-                return os.SetDevice(device).Match(
+                return dc.SetDevice(device).Match(
                     success: () => PlaceDeviceResult.Success,
-                    occupied: () => PlaceDeviceResult.AlreadyHasDevice
+                    occupied: () => PlaceDeviceResult.AlreadyHasDevice,
+                    unsupported: () => PlaceDeviceResult.CryptFeatureDoesNotSupportDeviceType
                 );
             }
 
-            return PlaceDeviceResult.BuildingFixtureDoesNotSupportDevices;
+            return PlaceDeviceResult.CryptFeatureDoesNotSupportDevices;
         }
 
         public enum PlaceDeviceResult
         {
             Success,
             InvalidFeature,
-            BuildingFixtureDoesNotSupportDevices,
+            CryptFeatureDoesNotSupportDevices,
+            CryptFeatureDoesNotSupportDeviceType,
             AlreadyHasDevice,
         }
 
@@ -100,13 +108,15 @@ namespace CryptoReaper.Simulation
             this Crypt.PlaceDeviceResult self,
             Func<T> success,
             Func<T> invalidFeature,
-            Func<T> buildingFixtureDoesNotSupportDevices,
+            Func<T> cryptFeatureDoesNotSupportDevices,
+            Func<T> cryptFeatureDoesNotSupportDeviceType,
             Func<T> alreadyHasDevice
             )
         {
             if (self == Crypt.PlaceDeviceResult.Success) return success();
             else if (self == Crypt.PlaceDeviceResult.InvalidFeature) return invalidFeature();
-            else if (self == Crypt.PlaceDeviceResult.BuildingFixtureDoesNotSupportDevices) return buildingFixtureDoesNotSupportDevices();
+            else if (self == Crypt.PlaceDeviceResult.CryptFeatureDoesNotSupportDevices) return cryptFeatureDoesNotSupportDevices();
+            else if (self == Crypt.PlaceDeviceResult.CryptFeatureDoesNotSupportDeviceType) return cryptFeatureDoesNotSupportDeviceType();
             else if (self == Crypt.PlaceDeviceResult.AlreadyHasDevice) return alreadyHasDevice();
             throw new Exception("value not mapped");
         }
