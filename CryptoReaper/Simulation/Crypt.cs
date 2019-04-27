@@ -1,5 +1,6 @@
-﻿using CryptoReaper.Simulation.BuildingFeatures;
+﻿using CryptoReaper.Simulation.CryptFeature;
 using System;
+using System.Collections.Generic;
 
 namespace CryptoReaper.Simulation
 {
@@ -10,15 +11,12 @@ namespace CryptoReaper.Simulation
     {
         public abstract class Feature { }
 
-        private readonly Feature[,] _cryptFeatures;
-
-        public Crypt(Feature[,] cryptFeatures)
-        {
-            _cryptFeatures = cryptFeatures;
-        }
+        private readonly Dictionary<string, Feature> _cryptFeatures = new Dictionary<string, Feature>();
 
         public struct Coords
         {
+            private string _key;
+
             public Coords(int row, int col)
             {
                 if (row < 0 || col < 0)
@@ -26,18 +24,24 @@ namespace CryptoReaper.Simulation
 
                 Row = row;
                 Col = col;
+                _key = $"{row},{col}";
             }
 
             public int Row { get; }
             public int Col { get; }
 
-            public bool HasFeature(Feature[,] features) => Row < features.GetLength(0) && Col < features.GetLength(1);
+            public bool HasFeature(Dictionary<string, Feature> features) => features.TryGetValue(_key, out var _);
 
-            public Feature GetFeature(Feature[,] features)
+            public Feature GetFeature(Dictionary<string, Feature> features)
             {
                 if (!this.HasFeature(features)) throw new Exception("building does not have feature");
-                return features[Row, Col];
+                return features[_key];
             }
+        }
+
+        public Feature this[Coords coords]
+        {
+            get =>
         }
 
         public PlaceDeviceResult PlaceDevice(Coords coords, Device device)

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CryptoReaper.Simulation.BuildingFeatures
+namespace CryptoReaper.Simulation.CryptFeature
 {
     class OpenSpace : Crypt.Feature
     {

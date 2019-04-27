@@ -48,10 +48,10 @@
     <Compile Include="GameStates\MainMenu.cs" />
     <Compile Include="GameStates\Playing.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Simulation\BuildingFeatures\OpenSpace.cs" />
-    <Compile Include="Simulation\BuildingFeatures\Wall.cs" />
-    <Compile Include="Simulation\BuildingFeatures\WallWithHellFirePortal.cs" />
-    <Compile Include="Simulation\BuildingFeatures\WallWithSoulPortal.cs" />
+    <Compile Include="Simulation\CryptFeatures\OpenSpace.cs" />
+    <Compile Include="Simulation\CryptFeatures\Wall.cs" />
+    <Compile Include="Simulation\CryptFeatures\WallWithHellFirePortal.cs" />
+    <Compile Include="Simulation\CryptFeatures\WallWithSoulPortal.cs" />
     <Compile Include="Simulation\Context.cs" />
     <Compile Include="Simulation\Crypt.cs" />
     <Compile Include="Simulation\Device.cs" />

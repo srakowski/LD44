@@ -1,4 +1,4 @@
-﻿using CryptoReaper.Simulation.BuildingFeatures;
+﻿using CryptoReaper.Simulation.CryptFeature;
 using System;
 using System.Collections.Generic;
 
