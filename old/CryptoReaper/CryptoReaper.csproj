@@ -42,12 +42,32 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Constants.cs" />
+    <Compile Include="Camera.cs" />
+    <Compile Include="ContentStore.cs" />
     <Compile Include="CryptoReaperGame.cs" />
-    <Compile Include="Functions.cs" />
+    <Compile Include="GameState.cs" />
+    <Compile Include="GameStates\MainMenu.cs" />
+    <Compile Include="GameStates\Playing.cs" />
     <Compile Include="InputState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Simulation.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="Simulation\CryptCoinAccount.cs" />
+    <Compile Include="Simulation\CryptFeatures\DeviceContainer.cs" />
+    <Compile Include="Simulation\CryptFeatures\OpenSpace.cs" />
+    <Compile Include="Simulation\CryptFeatures\Undefined.cs" />
+    <Compile Include="Simulation\CryptFeatures\Wall.cs" />
+    <Compile Include="Simulation\CryptFeatures\HellFireSpire.cs" />
+    <Compile Include="Simulation\CryptFeatures\SoulSpire.cs" />
+    <Compile Include="Simulation\Player.cs" />
+    <Compile Include="Simulation\Gameplay.cs" />
+    <Compile Include="Simulation\Crypt.cs" />
+    <Compile Include="Simulation\GameToken.cs" />
+    <Compile Include="Simulation\Devices\CryptCoinEngine.cs" />
+    <Compile Include="Simulation\Devices\Receivers.cs" />
+    <Compile Include="Simulation\Devices\Pipes.cs" />
+    <Compile Include="Simulation\IO.cs" />
+    <Compile Include="Simulation\Units.cs" />
+    <Compile Include="Transform.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="MonoGame.Framework">
