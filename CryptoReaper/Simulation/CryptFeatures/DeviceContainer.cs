@@ -1,69 +1,85 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace CryptoReaper.Simulation.CryptFeatures
 {
-    abstract class DeviceContainer : Crypt.Feature
+    abstract class GameTokenContainer : Crypt.Feature
     {
-        private readonly IEnumerable<Type> _supportedDeviceTypes;
+        private readonly IEnumerable<Type> _supportedGameTokens;
 
-        protected DeviceContainer(IEnumerable<Type> supportedDeviceTypes)
+        protected GameTokenContainer(string textureKey, IEnumerable<Type> supportedGameTokenTypes)
+            : base(textureKey)
         {
-            _supportedDeviceTypes = supportedDeviceTypes;
+            _supportedGameTokens = supportedGameTokenTypes;
         }
 
-        public Device Device { get; private set; }
+        public GameToken GameToken { get; private set; }
 
-        public SetDeviceResult SetDevice(Device device)
+        public override bool CanPlaceToken(GameToken gameToken) =>
+            GameToken == null &&
+            _supportedGameTokens.Contains(gameToken.GetType());
+
+        public SetGameTokenResult SetGameToken(GameToken gameToken)
         {
-            if (Device != null)
-                return SetDeviceResult.Occupied;
+            if (GameToken != null)
+                return SetGameTokenResult.Occupied;
 
-            if (!_supportedDeviceTypes.Contains(device.GetType()))
-                return SetDeviceResult.Unsupported;
+            if (!_supportedGameTokens.Contains(gameToken.GetType()))
+                return SetGameTokenResult.Unsupported;
 
-            Device = device;
+            GameToken = gameToken;
 
-            return SetDeviceResult.Success;
+            return SetGameTokenResult.Success;
         }
 
-        public enum SetDeviceResult
+        public enum SetGameTokenResult
         {
             Success,
             Occupied,
             Unsupported
         }
 
-        public ClearDeviceResult ClearDevice()
+        public ClearGameTokenResult ClearGameToken()
         {
-            Device = null;
-            return ClearDeviceResult.Success;
+            GameToken = null;
+            return ClearGameTokenResult.Success;
         }
 
-        public enum ClearDeviceResult
+        public enum ClearGameTokenResult
         {
             Success,
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, Vector2 position)
+        {
+            base.Draw(spriteBatch, position);
+            if (GameToken != null)
+            {
+                GameToken.Draw(spriteBatch, position);
+            }
         }
     }
 
     static partial class Extension
     {
         public static T Match<T>(
-            this DeviceContainer.SetDeviceResult self,
+            this GameTokenContainer.SetGameTokenResult self,
             Func<T> success,
             Func<T> occupied,
             Func<T> unsupported
             )
         {
-            if (self == DeviceContainer.SetDeviceResult.Success) return success();
-            else if (self == DeviceContainer.SetDeviceResult.Occupied) return occupied();
-            else if (self == DeviceContainer.SetDeviceResult.Unsupported) return unsupported();
+            if (self == GameTokenContainer.SetGameTokenResult.Success) return success();
+            else if (self == GameTokenContainer.SetGameTokenResult.Occupied) return occupied();
+            else if (self == GameTokenContainer.SetGameTokenResult.Unsupported) return unsupported();
             throw new Exception("value not mapped");
         }
 
-        public static T Match<T>(this OpenSpace.ClearDeviceResult self, Func<T> success) =>
-            self == DeviceContainer.ClearDeviceResult.Success ? success() :
+        public static T Match<T>(this OpenSpace.ClearGameTokenResult self, Func<T> success) =>
+            self == GameTokenContainer.ClearGameTokenResult.Success ? success() :
             throw new Exception("value not mapped");
     }
 }

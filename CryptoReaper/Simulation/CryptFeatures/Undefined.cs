@@ -2,5 +2,8 @@
 {
     class Undefined : Crypt.Feature
     {
+        public Undefined() : base(null)
+        {
+        }
     }
 }

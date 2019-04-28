@@ -21,6 +21,16 @@ namespace CryptoReaper
         public void LoadContent()
         {
             Load<Texture2D>("Sprites/title");
+            Load<Texture2D>("Sprites/OpenSpace");
+            Load<Texture2D>("Sprites/SoulSpire");
+            Load<Texture2D>("Sprites/StraightHellFirePipe");
+            Load<Texture2D>("Sprites/StraightSoulPipe");
+            Load<Texture2D>("Sprites/Wall");
+            Load<Texture2D>("Sprites/AngledHellFirePipe");
+            Load<Texture2D>("Sprites/AngledSoulPipe");
+            Load<Texture2D>("Sprites/HellFireSpire");
+            Load<Texture2D>("Sprites/Player");
+            Load<Texture2D>("Sprites/PlayerSelect");
         }
 
         private void Load<T>(string key)

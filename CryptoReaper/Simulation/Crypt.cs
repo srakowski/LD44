@@ -1,4 +1,6 @@
 ﻿using CryptoReaper.Simulation.CryptFeatures;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 
@@ -9,7 +11,29 @@ namespace CryptoReaper.Simulation
     /// </summary>
     class Crypt
     {
-        public abstract class Feature { }
+        public abstract class Feature
+        {
+            protected string _textureKey;
+            protected Texture2D _texture;
+
+            protected Feature(string textureKey)
+            {
+                _textureKey = textureKey;
+            }
+
+            public virtual bool CanPlaceToken(GameToken gameToken) => false;
+
+            public virtual void Draw(SpriteBatch spriteBatch, Vector2 position)
+            {
+                if (_textureKey == null)
+                    return;
+
+                if (_texture == null)
+                    _texture = ContentStore.Get<Texture2D>(_textureKey);
+
+                spriteBatch.Draw(_texture, position, Color.White);
+            }
+        }
 
         private readonly Dictionary<string, Feature> _cryptFeatures = new Dictionary<string, Feature>();
 
@@ -19,16 +43,17 @@ namespace CryptoReaper.Simulation
 
             public Coords(int row, int col)
             {
-                if (row < 0 || col < 0)
-                    throw new Exception("building coords may not be negative");
-
                 Row = row;
                 Col = col;
                 _key = $"{row},{col}";
+                WorldCoord = new Vector2(Col * Constants.TileUnit, Row * Constants.TileUnit);
             }
 
             public int Row { get; }
+
             public int Col { get; }
+
+            public Vector2 WorldCoord { get; }
 
             public bool HasFeature(Dictionary<string, Feature> features) => features.TryGetValue(_key, out var _);
 
@@ -44,80 +69,86 @@ namespace CryptoReaper.Simulation
             }
         }
 
+        public Feature this[int row, int col]
+        {
+            get => this[new Coords(row, col)];
+            set => this[new Coords(row, col)] = value;
+        }
+
         public Feature this[Coords coords]
         {
             get => coords.GetFeature(_cryptFeatures);
             set => coords.SetFeature(_cryptFeatures, value);
         }
 
-        public PlaceDeviceResult PlaceDevice(Coords coords, Device device)
+        public PlaceGameTokenResult PlaceGameToken(Coords coords, GameToken gameToken)
         {
             if (!coords.HasFeature(_cryptFeatures))
-                return PlaceDeviceResult.InvalidFeature;
+                return PlaceGameTokenResult.InvalidFeature;
 
             var buildingFeature = coords.GetFeature(_cryptFeatures);
 
-            if (buildingFeature is DeviceContainer dc)
+            if (buildingFeature is GameTokenContainer dc)
             {
-                return dc.SetDevice(device).Match(
-                    success: () => PlaceDeviceResult.Success,
-                    occupied: () => PlaceDeviceResult.AlreadyHasDevice,
-                    unsupported: () => PlaceDeviceResult.CryptFeatureDoesNotSupportDeviceType
+                return dc.SetGameToken(gameToken).Match(
+                    success: () => PlaceGameTokenResult.Success,
+                    occupied: () => PlaceGameTokenResult.AlreadyHasGameToken,
+                    unsupported: () => PlaceGameTokenResult.CryptFeatureDoesNotSupportGameTokenType
                 );
             }
 
-            return PlaceDeviceResult.CryptFeatureDoesNotSupportDevices;
+            return PlaceGameTokenResult.CryptFeatureDoesNotSupportGameTokens;
         }
 
-        public enum PlaceDeviceResult
+        public enum PlaceGameTokenResult
         {
             Success,
             InvalidFeature,
-            CryptFeatureDoesNotSupportDevices,
-            CryptFeatureDoesNotSupportDeviceType,
-            AlreadyHasDevice,
+            CryptFeatureDoesNotSupportGameTokens,
+            CryptFeatureDoesNotSupportGameTokenType,
+            AlreadyHasGameToken,
         }
 
-        public RemoveDeviceResult RemoveDevice(Coords coords)
+        public RemoveGameTokenResult RemoveGameToken(Coords coords)
         {
             if (!coords.HasFeature(_cryptFeatures))
-                return RemoveDeviceResult.InvalidFeature;
+                return RemoveGameTokenResult.InvalidFeature;
 
             var buildingFeature = coords.GetFeature(_cryptFeatures);
 
             if (buildingFeature is OpenSpace os)
             {
-                return os.ClearDevice()
-                    .Match(success: () => RemoveDeviceResult.Success);
+                return os.ClearGameToken()
+                    .Match(success: () => RemoveGameTokenResult.Success);
             }
 
-            return RemoveDeviceResult.BuildingFixtureDoesNotSupportDevices;
+            return RemoveGameTokenResult.BuildingFixtureDoesNotSupportGameTokens;
         }
 
-        public enum RemoveDeviceResult
+        public enum RemoveGameTokenResult
         {
             Success,
             InvalidFeature,
-            BuildingFixtureDoesNotSupportDevices,
+            BuildingFixtureDoesNotSupportGameTokens,
         }
     }
 
     static partial class Extension
     {
         public static T Match<T>(
-            this Crypt.PlaceDeviceResult self,
+            this Crypt.PlaceGameTokenResult self,
             Func<T> success,
             Func<T> invalidFeature,
-            Func<T> cryptFeatureDoesNotSupportDevices,
-            Func<T> cryptFeatureDoesNotSupportDeviceType,
+            Func<T> cryptFeatureDoesNotSupportGameTokens,
+            Func<T> cryptFeatureDoesNotSupportGameTokenType,
             Func<T> alreadyHasDevice
             )
         {
-            if (self == Crypt.PlaceDeviceResult.Success) return success();
-            else if (self == Crypt.PlaceDeviceResult.InvalidFeature) return invalidFeature();
-            else if (self == Crypt.PlaceDeviceResult.CryptFeatureDoesNotSupportDevices) return cryptFeatureDoesNotSupportDevices();
-            else if (self == Crypt.PlaceDeviceResult.CryptFeatureDoesNotSupportDeviceType) return cryptFeatureDoesNotSupportDeviceType();
-            else if (self == Crypt.PlaceDeviceResult.AlreadyHasDevice) return alreadyHasDevice();
+            if (self == Crypt.PlaceGameTokenResult.Success) return success();
+            else if (self == Crypt.PlaceGameTokenResult.InvalidFeature) return invalidFeature();
+            else if (self == Crypt.PlaceGameTokenResult.CryptFeatureDoesNotSupportGameTokens) return cryptFeatureDoesNotSupportGameTokens();
+            else if (self == Crypt.PlaceGameTokenResult.CryptFeatureDoesNotSupportGameTokenType) return cryptFeatureDoesNotSupportGameTokenType();
+            else if (self == Crypt.PlaceGameTokenResult.AlreadyHasGameToken) return alreadyHasDevice();
             throw new Exception("value not mapped");
         }
     }

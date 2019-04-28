@@ -2,13 +2,16 @@
 
 namespace CryptoReaper.Simulation.CryptFeatures
 {
-    class OpenSpace : DeviceContainer
+    class OpenSpace : GameTokenContainer
     {
-        public OpenSpace() : base(new[] {
+        public OpenSpace() : base(
+            "Sprites/OpenSpace",
+            new[] {
+                typeof(Player),
                 typeof(StraightSoulPipe),
                 typeof(AngledSoulPipe),
                 typeof(StraightHellFirePipe),
-                typeof(AngledHellFirePipe),
+                typeof(AngledHellFirePipe)
             })
         {
         }
