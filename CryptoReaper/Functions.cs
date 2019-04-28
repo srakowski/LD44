@@ -19,5 +19,15 @@ namespace CryptoReaper
         }
 
         public static string GetKey(this Point point) => $"{point.Y},{point.X}";
+
+        public static string GetDeviceTexture(CryptDevice device)
+        {
+            return device.Match(
+                hellFireReceiver: _ => "Receiver",
+                soulReceiver: _ => "Receiver",
+                pipe: _ => "HellFirePipe",
+                cryptCoinEngine: _ => "Engine"
+            );
+        }
     }
 }

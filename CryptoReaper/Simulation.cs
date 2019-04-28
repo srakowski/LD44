@@ -9,8 +9,8 @@ namespace CryptoReaper
 {
     public class Crypt
     {
-        public const int CryptFeaturesPerSection = 200;
-        public const int CryptFeaturesMidPoint = CryptFeaturesPerSection / 2;
+        public const int CryptFeaturesDimPerSection = 20;
+        public const int CryptFeaturesMidPoint = CryptFeaturesDimPerSection / 2;
 
         private readonly Random _random;
         private readonly Dictionary<string, CryptFeature> _features;
@@ -26,23 +26,42 @@ namespace CryptoReaper
             _spawningSpires = new List<CryptFeature.SpawningSpire>();
             _devices = new List<CryptDevice>();
             GenerateCryptSection(0, 0);
+            CryptCoinBalance = 100;
+            WastedCryptCoins = 0;
+            WastedHellFire = 0;
+            WastedSouls = 0;
+        }
+
+        public int CryptCoinBalance { get; private set; }
+
+        public int WastedCryptCoins { get; private set; }
+
+        public int WastedHellFire { get; private set; }
+
+        public int WastedSouls { get; private set; }
+
+        public IEnumerable<CryptSection> CryptSections => _sections.Values;
+
+        internal void RemoveDeviceAt(Point cryptPos)
+        {
+            var dev = this[cryptPos].Device;
+            if (dev != null)
+            {
+                _devices.Remove(dev);
+                this[cryptPos].RemoveDevice();
+            }
         }
 
         public CryptFeature this[Point point] => this[point.Y, point.X];
 
-        public CryptFeature this[int row, int col] => _features.TryGetValue(new Point(row, col).GetKey(), out var feature)
-            ? feature : new CryptFeature.Void(null, null, new Point(row, col)) as CryptFeature;
+        public CryptFeature this[int row, int col] => _features.TryGetValue(new Point(col, row).GetKey(), out var feature)
+            ? feature : new CryptFeature.Void(null, null, new Point(col, row)) as CryptFeature;
 
         public void Step()
         {
-            foreach (var spire in _spawningSpires)
-                spire.SpawnResources();
-
+            var devices = _devices.OrderByDescending(r => r.ResourceQuantity).ToArray();
             foreach (var device in _devices)
-                device.ProcessSupply();
-
-            foreach (var device in _devices.OrderBy(d => d.Pressure))
-                device.Flush();
+                device.PullResources();
         }
 
         public bool CanPlaceCryptDevice(CryptDevice cryptDevice, Point position)
@@ -60,10 +79,14 @@ namespace CryptoReaper
                 hellFireReceiver: _ => features.All(f => f is CryptFeature.HellFireSpire),
                 soulReceiver: _ => features.All(f => f is CryptFeature.SoulSpire),
                 pipe: _ => features.All(f => f is CryptFeature.Floor),
-                cryptCoinEngine: _ => features.All(f => f is CryptFeature.Floor),
-                cryptCoinExchange: _ => features.Any(f => f is CryptFeature.CryptCoinSpire)
+                cryptCoinEngine: _ => features.All(f => f is CryptFeature.Floor)
             );
         }
+
+        public CryptSection GetSection(int row, int col) =>
+            _sections.TryGetValue(new Point(col, row).GetKey(), out var section)
+                ? section
+                : null;
 
         public void PlaceCryptDevice(CryptDevice cryptDevice, Point position)
         {
@@ -76,11 +99,11 @@ namespace CryptoReaper
             _devices.Add(cryptDevice);
         }
 
-        private void GenerateCryptSection(int row, int col)
+        public void GenerateCryptSection(int row, int col)
         {
             var sectionPosition = new Point(col, row);
             var section = _sections[sectionPosition.GetKey()] = new CryptSection(this, sectionPosition);
-            ForAllRowsAndCols(CryptFeaturesPerSection, GenerateCryptFeaturesForSection(section));
+            ForAllRowsAndCols(CryptFeaturesDimPerSection, GenerateCryptFeaturesForSection(section));
             GenerateSpires(section);
         }
 
@@ -92,10 +115,10 @@ namespace CryptoReaper
                 var featureRoll = _random.Next(100);
 
                 var chanceHardRock = (Min(Abs(row - CryptFeaturesMidPoint), Abs(col - CryptFeaturesMidPoint)) * 100) / CryptFeaturesMidPoint;
-                chanceHardRock = chanceHardRock < 75 ? 0 : chanceHardRock;
+                chanceHardRock = chanceHardRock < 50 ? 0 : chanceHardRock;
 
                 var chanceSoftRock = (Min(Abs(row - CryptFeaturesMidPoint), Abs(col - CryptFeaturesMidPoint)) * 100) / CryptFeaturesMidPoint;
-                chanceSoftRock = chanceSoftRock < 50 ? 0 : chanceSoftRock;
+                chanceSoftRock = chanceSoftRock < 25 ? 0 : chanceSoftRock;
 
                 var feature = featureRoll < chanceHardRock
                     ? new CryptFeature.HardRock(this, section, featurePosition)
@@ -110,11 +133,11 @@ namespace CryptoReaper
         {
             var centerPoint = section.SectionPositionToCryptPosition(CryptFeaturesMidPoint, CryptFeaturesMidPoint);
 
-            if (section.Position.X == 0 && section.Position.Y == 0)
-            {
-                var cryptCoinSpire = new CryptFeature.CryptCoinSpire(this, section, centerPoint);
-                _features[centerPoint.GetKey()] = cryptCoinSpire;
-            }
+            //if (section.Position.X == 0 && section.Position.Y == 0)
+            //{
+            //    var cryptCoinSpire = new CryptFeature.CryptCoinSpire(this, section, centerPoint);
+            //    _features[centerPoint.GetKey()] = cryptCoinSpire;
+            //}
 
             var softFeatureQueue = new Queue<CryptFeature>(section.GetCryptFeatures()
                 .Where(f => !(f is CryptFeature.HardRock) && !(f is CryptFeature.Spire))
@@ -123,7 +146,7 @@ namespace CryptoReaper
                     var cryptPosition = section.CryptPositionToSectionPosition(f.Position);
                     var rowPos = (Abs(cryptPosition.Y - CryptFeaturesMidPoint) * 100) / CryptFeaturesMidPoint;
                     var colPos = (Abs(cryptPosition.X - CryptFeaturesMidPoint) * 100) / CryptFeaturesMidPoint;
-                    return rowPos < 75 && rowPos > 25 && colPos < 75 && colPos > 25;
+                    return rowPos < 50 && rowPos > 10 && colPos < 50 && colPos > 10;
                 })
                 .OrderBy(_ => _random.Next(100))
                 .ToArray());
@@ -139,13 +162,16 @@ namespace CryptoReaper
             _spawningSpires.Add(hellFireSpire);
         }
 
-        public void DepositCoins(int quantity)
+        internal void WasteResources(int hellFire, int souls, int coins)
         {
+            WastedHellFire += hellFire;
+            WastedSouls += souls;
+            WastedCryptCoins += coins;
         }
 
-        internal void WasteResources(List<IResource> resources)
+        internal void DepositCoins(int quantity)
         {
-            throw new NotImplementedException();
+            CryptCoinBalance += quantity;
         }
     }
 
@@ -163,8 +189,8 @@ namespace CryptoReaper
 
         public IEnumerable<CryptFeature> GetCryptFeatures()
         {
-            for (int row = 0; row < Crypt.CryptFeaturesPerSection; row++)
-                for (int col = 0; col < Crypt.CryptFeaturesPerSection; col++)
+            for (int row = 0; row < Crypt.CryptFeaturesDimPerSection; row++)
+                for (int col = 0; col < Crypt.CryptFeaturesDimPerSection; col++)
                 {
                     var featurePosition = SectionPositionToCryptPosition(row, col);
                     yield return Crypt[featurePosition.Y, featurePosition.X];
@@ -172,10 +198,10 @@ namespace CryptoReaper
         }
 
         public Point SectionPositionToCryptPosition(int row, int col) =>
-            (new Point(col, row) + (this.Position * new Point(Crypt.CryptFeaturesPerSection, Crypt.CryptFeaturesPerSection)));
+            (new Point(col, row) + (this.Position * new Point(Crypt.CryptFeaturesDimPerSection, Crypt.CryptFeaturesDimPerSection)));
 
         public Point CryptPositionToSectionPosition(Point cryptPosition) =>
-            (cryptPosition - (this.Position * new Point(Crypt.CryptFeaturesPerSection, Crypt.CryptFeaturesPerSection)));
+            (cryptPosition - (this.Position * new Point(Crypt.CryptFeaturesDimPerSection, Crypt.CryptFeaturesDimPerSection)));
     }
 
     public abstract class CryptFeature
@@ -200,6 +226,12 @@ namespace CryptoReaper
         {
             device.SetHostFeature(this);
             this.Device = device;
+        }
+
+        internal void RemoveDevice()
+        {
+            if (this.Device == null) return;
+            this.Device = null;
         }
 
         public class Void : CryptFeature
@@ -242,8 +274,6 @@ namespace CryptoReaper
             protected SpawningSpire(Crypt crypt, CryptSection cryptSection, Point position) : base(crypt, cryptSection, position)
             {
             }
-
-            public abstract void SpawnResources();
         }
 
         public class HellFireSpire : SpawningSpire
@@ -251,24 +281,12 @@ namespace CryptoReaper
             public HellFireSpire(Crypt crypt, CryptSection cryptSection, Point cryptPosition) : base(crypt, cryptSection, cryptPosition)
             {
             }
-
-            public override void SpawnResources()
-            {
-                if (this.Device == null) return;
-                this.Device.Push(new HellFire());
-            }
         }
 
         public class SoulSpire : SpawningSpire
         {
             public SoulSpire(Crypt crypt, CryptSection cryptSection, Point cryptPosition) : base(crypt, cryptSection, cryptPosition)
             {
-            }
-
-            public override void SpawnResources()
-            {
-                if (this.Device == null) return;
-                this.Device.Push(new Soul());
             }
         }
 
@@ -282,113 +300,128 @@ namespace CryptoReaper
 
     public abstract class CryptDevice
     {
-        protected List<IResource> _resources = new List<IResource>();
+        private int _fireQty;
+        private int _soulQty;
+        private int _pullIdx;
 
-        private CryptDevice(Crypt crypt, int resourceCapacity, bool receives, bool outputs)
+        private CryptDevice(Crypt crypt, int resourceCapacity)
         {
             Crypt = crypt;
             ResourceCapacity = resourceCapacity;
-            Receives = receives;
-            Outputs = outputs;
         }
+
+        public int ResourceQuantity => _fireQty + _soulQty;
+
+        public int FireQuantity => _fireQty;
+
+        public int SoulQuantity => _soulQty;
 
         public Crypt Crypt { get; }
 
         public int ResourceCapacity { get; }
 
-        public bool Receives { get; }
+        public Func<ResourceType, bool> Receives { get; }
 
         public bool Outputs { get; }
 
         public CryptFeature HostFeature { get; private set; }
 
-        public float Pressure => ResourceCapacity <= 0 ? 0 : _resources.Count / (float)ResourceCapacity;
+        public void SetHostFeature(CryptFeature feature) => HostFeature = feature;
 
-        public virtual void ProcessSupply() { }
-
-        public void SetHostFeature(CryptFeature feature)
+        private void GetOneQty(Action fire, Action soul)
         {
-            HostFeature = feature;
-        }
+            if (_fireQty == 0 && _soulQty == 0)
+                throw new Exception("nope");
 
-        public void Push(IResource resource)
-        {
-            _resources.Add(resource);
-        }
-
-        public void Flush()
-        {
-            if (!this.Outputs) return;
-            if (!_resources.Any()) return;
-            if (HostFeature == null) return;
-
-            var adjacentDevicesThatReceive = new[] {
-                Crypt[HostFeature.Position + new Point(0, -1)],
-                Crypt[HostFeature.Position + new Point(1, 0)],
-                Crypt[HostFeature.Position + new Point(0, 1)],
-                Crypt[HostFeature.Position + new Point(-1, 0)],
+            _pullIdx++;
+            while (true)
+            {
+                if (_fireQty > 0 && _pullIdx % 2 == 0)
+                {
+                    _fireQty--;
+                    fire();
+                    return;
+                }
+                else if (_soulQty > 0 && _pullIdx % 2 == 1)
+                {
+                    _soulQty--;
+                    soul();
+                    return;
+                }
+                _pullIdx++;
             }
+        }
+
+        public virtual void PullResources()
+        {
+            var devices = new[] {
+                    Crypt[HostFeature.Position + new Point(0, -1)],
+                    Crypt[HostFeature.Position + new Point(1, 0)],
+                    Crypt[HostFeature.Position + new Point(0, 1)],
+                    Crypt[HostFeature.Position + new Point(-1, 0)],
+                }
                 .Select(f => f.Device)
                 .Where(d => d != null)
-                .Where(d => d.Receives)
-                .ToList();
+                .Where(d => d.ResourceQuantity > this.ResourceQuantity)
+                .OrderByDescending(d => d.ResourceQuantity)
+                .ToArray();
 
-            if (!adjacentDevicesThatReceive.Any())
-            {
-                Crypt.WasteResources(_resources);
-                _resources.Clear();
-            }
+            if (!devices.Any()) return;
 
-            while (adjacentDevicesThatReceive.Any(d => d.Pressure < this.Pressure) && this._resources.Any())
+            var top = devices.First();
+            while ((top.ResourceQuantity - 1) > this.ResourceQuantity)
             {
-                var lowest = adjacentDevicesThatReceive.OrderBy(a => a.Pressure).First();
-                var resource = _resources.First();
-                this._resources.Remove(resource);
-                lowest.Push(resource);
+                top.GetOneQty(
+                    fire: () => _fireQty++,
+                    soul: () => _soulQty++
+                );
+                top = devices.OrderByDescending(d => d.ResourceQuantity).First();
             }
         }
 
         public class HellFireReceiver : CryptDevice
         {
-            public HellFireReceiver(Crypt crypt) : base(crypt, 1, receives: false, outputs: true) { }
+            public HellFireReceiver(Crypt crypt) : base(crypt, 60) { }
+
+            public override void PullResources()
+            {
+                if (ResourceQuantity >= ResourceCapacity) return;
+                this._fireQty += 10;
+            }
         }
 
         public class SoulReceiver : CryptDevice
         {
-            public SoulReceiver(Crypt crypt) : base(crypt, 1, receives: false, outputs: true) { }
+            public SoulReceiver(Crypt crypt) : base(crypt, 60) { }
+
+            public override void PullResources()
+            {
+                if (ResourceQuantity >= ResourceCapacity) return;
+                this._soulQty += 10;
+            }
         }
 
         public class Pipe : CryptDevice
         {
-            public Pipe(Crypt crypt) : base(crypt, 6, receives: true, outputs: true) { }
+            public Pipe(Crypt crypt) : base(crypt, 60) { }
         }
 
         public class CryptCoinEngine : CryptDevice
         {
-            public CryptCoinEngine(Crypt crypt) : base(crypt, 12, receives: true, outputs: true) { }
+            public CryptCoinEngine(Crypt crypt) : base(crypt, 60) { }
 
-            public override void ProcessSupply()
+            public override void PullResources()
             {
-                var hellFireUnits = new Queue<HellFire>(_resources.OfType<HellFire>());
-                var soulUnits = new Queue<Soul>(_resources.OfType<Soul>());
-                while (hellFireUnits.Count > 0 && soulUnits.Count > 0)
+                base.PullResources();
+                while (_soulQty > 0 && _fireQty > 0)
                 {
-                    _resources.Remove(hellFireUnits.Dequeue());
-                    _resources.Remove(soulUnits.Dequeue());
-                    _resources.Add(new CryptCoin());
+                    _soulQty--;
+                    _fireQty--;
+                    Crypt.DepositCoins(1);
                 }
-            }
-        }
-
-        public class CryptCoinExchange : CryptDevice
-        {
-            public CryptCoinExchange(Crypt crypt) : base(crypt, 0, receives: true, outputs: false) { }
-
-            public override void ProcessSupply()
-            {
-                var cryptCoins = this._resources.OfType<CryptCoin>().ToList();
-                Crypt.DepositCoins(cryptCoins.Count());
-                cryptCoins.ForEach(c => _resources.Remove(c));
+                Crypt.WasteResources(_fireQty, _soulQty, 0);
+                _soulQty = 0;
+                _fireQty = 0;
             }
         }
 
@@ -396,13 +429,11 @@ namespace CryptoReaper
             Func<HellFireReceiver, TResult> hellFireReceiver,
             Func<SoulReceiver, TResult> soulReceiver,
             Func<Pipe, TResult> pipe,
-            Func<CryptCoinEngine, TResult> cryptCoinEngine,
-            Func<CryptCoinExchange, TResult> cryptCoinExchange)
+            Func<CryptCoinEngine, TResult> cryptCoinEngine)
         {
             if (this is HellFireReceiver hr) return hellFireReceiver(hr);
             if (this is SoulReceiver sr) return soulReceiver(sr);
             if (this is Pipe p) return pipe(p);
-            if (this is CryptCoinExchange exchange) return cryptCoinExchange(exchange);
             if (this is CryptCoinEngine engine) return cryptCoinEngine(engine);
             throw new Exception("map the type here");
         }
@@ -413,19 +444,9 @@ namespace CryptoReaper
         }
     }
 
-    public interface IResource
+    public enum ResourceType
     {
-    }
-
-    public struct Soul : IResource
-    {
-    }
-
-    public struct HellFire : IResource
-    {
-    }
-
-    public struct CryptCoin : IResource
-    {
+        Fire,
+        Soul,
     }
 }

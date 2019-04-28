@@ -15,6 +15,9 @@ namespace CryptoReaper
         public static MouseState CurrMouseState { get; private set; }
         public Vector2 MousePosition => CurrMouseState.Position.ToVector2();
 
+        public bool MouseClicked => PrevMouseState.LeftButton == ButtonState.Pressed && CurrMouseState.LeftButton == ButtonState.Released;
+        public bool MouseRightClicked => PrevMouseState.RightButton == ButtonState.Pressed && CurrMouseState.RightButton == ButtonState.Released;
+
         public void Update(GameTime gameTime)
         {
             PrevKBState = CurrKBState;

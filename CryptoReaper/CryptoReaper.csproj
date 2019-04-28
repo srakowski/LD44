@@ -42,8 +42,10 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Button.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="CryptoReaperGame.cs" />
+    <Compile Include="Cursor.cs" />
     <Compile Include="Functions.cs" />
     <Compile Include="InputState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -107,20 +109,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="app.manifest" />
+    <None Include="Content\HudFont.spritefont" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\Sprites\AngledHellFirePipe.png" />
-    <Content Include="Content\Sprites\AngledSoulPipe.png" />
-    <Content Include="Content\Sprites\HellFireReceiver.png" />
-    <Content Include="Content\Sprites\HellFireSpire.png" />
-    <Content Include="Content\Sprites\OpenSpace.png" />
-    <Content Include="Content\Sprites\Player.png" />
-    <Content Include="Content\Sprites\SoulReceiver.png" />
-    <Content Include="Content\Sprites\SoulSpire.png" />
-    <Content Include="Content\Sprites\StraightHellFirePipe.png" />
-    <Content Include="Content\Sprites\StraightSoulPipe.png" />
     <Content Include="Content\Sprites\title.png" />
-    <Content Include="Content\Sprites\Wall.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
